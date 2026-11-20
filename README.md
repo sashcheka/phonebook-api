@@ -61,3 +61,7 @@ cmake -S . -B build -DBUILD_TESTING=ON
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
+
+## Continuous integration
+
+GitHub Actions builds the project and runs CTest on macOS 15 and Ubuntu 24.04 for pull requests and pushes to `main`.

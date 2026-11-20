@@ -41,6 +41,11 @@ if(BUILD_TESTING)
     target_include_directories(health_test PRIVATE src)
     target_link_libraries(health_test PRIVATE oatpp::oatpp GTest::gtest)
 
+    add_executable(contact_test tests/test_main.cpp tests/contact_controller_test.cpp src/http/contact_controller.cpp)
+    target_include_directories(contact_test PRIVATE src)
+    target_link_libraries(contact_test PRIVATE oatpp::oatpp GTest::gtest)
+
     include(GoogleTest)
     gtest_discover_tests(health_test)
+    gtest_discover_tests(contact_test)
 endif()

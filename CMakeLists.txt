@@ -24,6 +24,7 @@ configure_file(migrations/init_db.sql migrations/init_db.sql COPYONLY)
 add_executable(phonebook_api
     src/main.cpp
     src/http/health_controller.cpp
+    src/storage/sqlite/sqlite_contact_repository.cpp
 )
 target_include_directories(phonebook_api PRIVATE src)
 target_link_libraries(phonebook_api PRIVATE oatpp::oatpp oatpp::oatpp-sqlite)

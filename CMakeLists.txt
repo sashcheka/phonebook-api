@@ -2,9 +2,29 @@ cmake_minimum_required(VERSION 3.24)
 
 project(phonebook_api LANGUAGES CXX)
 find_package(oatpp REQUIRED)
+find_package(oatpp-sqlite CONFIG QUIET)
 
-add_executable(phonebook_api src/main.cpp src/http/health_controller.cpp)
-target_link_libraries(phonebook_api PRIVATE oatpp::oatpp)
+if(NOT TARGET oatpp::oatpp-sqlite)
+    include(FetchContent)
+    # Use the Oat++ target already found above. The module's default lookup requests 1.3.0.
+    set(OATPP_MODULES_LOCATION CUSTOM CACHE STRING "Oat++ location for oatpp-sqlite")
+    set(OATPP_BUILD_TESTS OFF)
+    set(OATPP_INSTALL OFF)
+    FetchContent_Declare(oatpp_sqlite
+        URL https://codeload.github.com/oatpp/oatpp-sqlite/tar.gz/95488343163a9111f03709f68e4944aa46217962
+        URL_HASH SHA256=013b374d774d41ec1de34c6dbae7f401c98f6ba28a24f56cbba14c4ea8d90088
+        DOWNLOAD_NAME oatpp-sqlite-1.3.0.tar.gz
+    )
+    FetchContent_MakeAvailable(oatpp_sqlite)
+    add_library(oatpp::oatpp-sqlite ALIAS oatpp-sqlite)
+endif()
+
+add_executable(phonebook_api
+    src/main.cpp
+    src/http/health_controller.cpp
+)
+target_include_directories(phonebook_api PRIVATE src)
+target_link_libraries(phonebook_api PRIVATE oatpp::oatpp oatpp::oatpp-sqlite)
 
 include(CTest)
 

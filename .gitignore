@@ -69,3 +69,7 @@ Testing/
 
 # PDF files
 *.pdf
+
+# Local SQLite database
+phonebook.db
+phonebook.db-*

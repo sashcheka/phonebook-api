@@ -1,4 +1,4 @@
-#include "http/HealthController.hpp"
+#include "http/health_controller.hpp"
 
 #include <oatpp/core/base/Environment.hpp>
 #include <oatpp/network/Address.hpp>

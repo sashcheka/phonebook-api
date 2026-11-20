@@ -1,7 +1,6 @@
 #include "http/health_controller.hpp"
 
 #include <gtest/gtest.h>
-#include <oatpp/core/base/Environment.hpp>
 #include <oatpp/parser/json/mapping/ObjectMapper.hpp>
 
 #include <string_view>
@@ -38,11 +37,3 @@ TEST_F(HealthControllerTest, ReturnsOkBody) {
 }
 
 }  // namespace
-
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    oatpp::base::Environment::init();
-    const int result = RUN_ALL_TESTS();
-    oatpp::base::Environment::destroy();
-    return result;
-}

@@ -37,7 +37,7 @@ include(CTest)
 
 if(BUILD_TESTING)
     find_package(GTest CONFIG REQUIRED)
-    add_executable(health_test tests/health_controller_test.cpp src/http/health_controller.cpp)
+    add_executable(health_test tests/test_main.cpp tests/health_controller_test.cpp src/http/health_controller.cpp)
     target_include_directories(health_test PRIVATE src)
     target_link_libraries(health_test PRIVATE oatpp::oatpp GTest::gtest)
 

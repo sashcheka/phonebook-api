@@ -53,18 +53,6 @@ target_compile_definitions(phonebook_api PRIVATE
 )
 
 include(CTest)
-
 if(BUILD_TESTING)
-    find_package(GTest CONFIG REQUIRED)
-    add_executable(health_test tests/test_main.cpp tests/health_controller_test.cpp src/http/health_controller.cpp)
-    target_include_directories(health_test PRIVATE src)
-    target_link_libraries(health_test PRIVATE oatpp::oatpp GTest::gtest)
-
-    add_executable(contact_test tests/test_main.cpp tests/contact_controller_test.cpp src/http/contacts/contact_controller.cpp)
-    target_include_directories(contact_test PRIVATE src)
-    target_link_libraries(contact_test PRIVATE oatpp::oatpp GTest::gtest)
-
-    include(GoogleTest)
-    gtest_discover_tests(health_test)
-    gtest_discover_tests(contact_test)
+    add_subdirectory(tests)
 endif()

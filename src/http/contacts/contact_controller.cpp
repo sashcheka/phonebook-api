@@ -1,10 +1,10 @@
 #include "http/contacts/contact_controller.hpp"
 
-#include "application/contact_service.hpp"
+#include "application/contact_service_interface.hpp"
 
 ContactController::ContactController(
     const std::shared_ptr<oatpp::data::mapping::ObjectMapper>& mapper,
-    const ContactService& service)
+    const IContactService& service)
     : ApiController(mapper), service_(service) {}
 
 std::shared_ptr<ContactController::OutgoingResponse> ContactController::listContacts() {

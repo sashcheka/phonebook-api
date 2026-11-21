@@ -24,7 +24,7 @@ configure_file(migrations/init_db.sql migrations/init_db.sql COPYONLY)
 add_executable(phonebook_api
     src/main.cpp
     src/server.cpp
-    src/http/contact_controller.cpp
+    src/http/contacts/contact_controller.cpp
     src/http/health_controller.cpp
     src/storage/sqlite/sqlite_contact_repository.cpp
 )
@@ -42,7 +42,7 @@ if(BUILD_TESTING)
     target_include_directories(health_test PRIVATE src)
     target_link_libraries(health_test PRIVATE oatpp::oatpp GTest::gtest)
 
-    add_executable(contact_test tests/test_main.cpp tests/contact_controller_test.cpp src/http/contact_controller.cpp)
+    add_executable(contact_test tests/test_main.cpp tests/contact_controller_test.cpp src/http/contacts/contact_controller.cpp)
     target_include_directories(contact_test PRIVATE src)
     target_link_libraries(contact_test PRIVATE oatpp::oatpp GTest::gtest)
 

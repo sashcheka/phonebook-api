@@ -1,5 +1,7 @@
 #pragma once
 
+#include "http/contacts/contact_dto.hpp"
+
 #include <oatpp/core/macro/codegen.hpp>
 #include <oatpp/web/server/api/ApiController.hpp>
 

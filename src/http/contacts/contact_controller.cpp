@@ -1,22 +1,6 @@
-#include "http/contact_controller.hpp"
+#include "http/contacts/contact_controller.hpp"
 
 #include "application/contact_service.hpp"
-
-namespace {
-
-#include OATPP_CODEGEN_BEGIN(DTO)
-
-class ContactDto : public oatpp::DTO {
-    DTO_INIT(ContactDto, DTO)
-    DTO_FIELD(Int64, id);
-    DTO_FIELD(String, name);
-    DTO_FIELD(String, phone);
-    DTO_FIELD(String, address);
-};
-
-#include OATPP_CODEGEN_END(DTO)
-
-}  // namespace
 
 ContactController::ContactController(
     const std::shared_ptr<oatpp::data::mapping::ObjectMapper>& mapper,
@@ -24,7 +8,7 @@ ContactController::ContactController(
     : ApiController(mapper), service_(service) {}
 
 std::shared_ptr<ContactController::OutgoingResponse> ContactController::listContacts() {
-    auto response = oatpp::Vector<oatpp::Object<ContactDto>>::createShared();
+    auto response = ContactListDto::createShared();
     for (const auto& contact : service_.listContacts()) {
         auto dto = ContactDto::createShared();
         dto->id = contact.id;

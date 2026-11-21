@@ -1,5 +1,5 @@
 #include "application/contact_service.hpp"
-#include "http/contact_controller.hpp"
+#include "http/contacts/contact_controller.hpp"
 
 #include <gtest/gtest.h>
 #include <oatpp/parser/json/mapping/ObjectMapper.hpp>

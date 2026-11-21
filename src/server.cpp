@@ -1,7 +1,7 @@
 #include "server.hpp"
 
 #include "application/contact_service.hpp"
-#include "http/contact_controller.hpp"
+#include "http/contacts/contact_controller.hpp"
 #include "http/health_controller.hpp"
 #include "storage/sqlite/sqlite_contact_repository.hpp"
 

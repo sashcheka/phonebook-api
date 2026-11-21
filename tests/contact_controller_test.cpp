@@ -5,6 +5,8 @@
 #include <oatpp/parser/json/mapping/ObjectMapper.hpp>
 
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <vector>
 
 namespace {
@@ -24,6 +26,15 @@ public:
     std::vector<Contact> contacts;
 
     std::vector<Contact> listContacts() const override { return contacts; }
+
+    std::optional<Contact> findContactById(std::int64_t id) const override {
+        for (const auto& contact : contacts) {
+            if (contact.id == id) {
+                return contact;
+            }
+        }
+        return std::nullopt;
+    }
 };
 
 class ContactControllerTest : public ::testing::Test {

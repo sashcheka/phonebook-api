@@ -41,6 +41,7 @@ add_executable(phonebook_api
     src/storage/sqlite/sqlite_contact_repository.cpp
 )
 target_include_directories(phonebook_api PRIVATE src)
+target_compile_features(phonebook_api PRIVATE cxx_std_17)
 target_link_libraries(phonebook_api PRIVATE
     oatpp::oatpp
     oatpp::oatpp-sqlite

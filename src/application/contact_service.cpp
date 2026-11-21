@@ -8,3 +8,7 @@ ContactService::ContactService(const IContactRepository& repository)
 std::vector<Contact> ContactService::listContacts() const {
     return repository_.listContacts();
 }
+
+std::optional<Contact> ContactService::findContactById(std::int64_t id) const {
+    return repository_.findContactById(id);
+}

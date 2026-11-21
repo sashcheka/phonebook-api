@@ -18,6 +18,10 @@ class ContactRow : public oatpp::DTO {
 
 #include OATPP_CODEGEN_END(DTO)
 
+Contact toContact(const oatpp::Object<ContactRow>& row) {
+    return {*row->id, *row->name, *row->phone, *row->address};
+}
+
 }  // namespace
 
 #include OATPP_CODEGEN_BEGIN(DbClient)
@@ -32,6 +36,8 @@ public:
     }
 
     QUERY(selectContacts, "SELECT id, name, phone, address FROM contacts ORDER BY id;")
+    QUERY(selectContactById, "SELECT id, name, phone, address FROM contacts WHERE id = :id;",
+          PARAM(oatpp::Int64, id))
 };
 
 #include OATPP_CODEGEN_END(DbClient)
@@ -52,7 +58,20 @@ std::vector<Contact> SqliteContactRepository::listContacts() const {
     std::vector<Contact> contacts;
     contacts.reserve(rows->size());
     for (const auto& row : *rows) {
-        contacts.push_back({*row->id, *row->name, *row->phone, *row->address});
+        contacts.push_back(toContact(row));
     }
     return contacts;
+}
+
+std::optional<Contact> SqliteContactRepository::findContactById(std::int64_t id) const {
+    auto result = client_->selectContactById(id);
+    if (!result->isSuccess()) {
+        throw std::runtime_error("Could not find contact: " + *result->getErrorMessage());
+    }
+
+    const auto rows = result->fetch<oatpp::Vector<oatpp::Object<ContactRow>>>();
+    if (rows->empty()) {
+        return std::nullopt;
+    }
+    return toContact(rows[0]);
 }

@@ -34,6 +34,7 @@ unset(CMAKE_POLICY_VERSION_MINIMUM)
 add_executable(phonebook_api
     src/main.cpp
     src/server.cpp
+    src/application/contact_service.cpp
     src/http/contacts/contact_controller.cpp
     src/http/health_controller.cpp
     src/http/swagger/swagger.cpp

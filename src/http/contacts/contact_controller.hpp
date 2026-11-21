@@ -1,7 +1,5 @@
 #pragma once
 
-#include "http/contacts/contact_dto.hpp"
-
 #include <oatpp/core/macro/codegen.hpp>
 #include <oatpp/web/server/api/ApiController.hpp>
 
@@ -15,12 +13,13 @@ public:
                       const IContactService& service);
 
     ENDPOINT_INFO(listContacts) {
-        info->summary = "List contacts";
-        info->addResponse<ContactListDto>(Status::CODE_200, "application/json");
+        describeListContacts(*info);
     }
     ENDPOINT("GET", "/contacts", listContacts);
 
 private:
+    static void describeListContacts(oatpp::web::server::api::Endpoint::Info& info);
+
     const IContactService& service_;
 };
 

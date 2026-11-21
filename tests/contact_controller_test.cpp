@@ -1,5 +1,6 @@
 #include "application/contact_service_interface.hpp"
 #include "http/contacts/contact_controller.hpp"
+#include "http/error_dto.hpp"
 
 #include <gtest/gtest.h>
 #include <oatpp/parser/json/mapping/ObjectMapper.hpp>
@@ -44,17 +45,21 @@ protected:
         oatpp::parser::json::mapping::ObjectMapper::createShared();
     ContactController controller_{mapper_, service_};
 
+    static oatpp::String responseJson(const std::shared_ptr<ContactController::OutgoingResponse>& response) {
+        const auto body = response->getBody();
+        if (!body || !body->getKnownData() || body->getKnownSize() <= 0) {
+            return nullptr;
+        }
+        return {reinterpret_cast<const char*>(body->getKnownData()), body->getKnownSize()};
+    }
+
     void expectContactsResponse() {
         const auto response = controller_.listContacts();
         ASSERT_NE(response, nullptr);
         EXPECT_EQ(200, response->getStatus().code);
 
-        const auto body = response->getBody();
-        ASSERT_NE(body, nullptr);
-        ASSERT_GT(body->getKnownSize(), 0);
-        const auto* data = body->getKnownData();
-        ASSERT_NE(data, nullptr);
-        const oatpp::String json(reinterpret_cast<const char*>(data), body->getKnownSize());
+        const auto json = responseJson(response);
+        ASSERT_NE(json, nullptr);
         const auto contacts = mapper_->readFromString<oatpp::Vector<oatpp::Object<JsonContact>>>(json);
         ASSERT_NE(contacts, nullptr);
         ASSERT_EQ(service_.contacts.size(), contacts->size());
@@ -82,6 +87,51 @@ TEST_F(ContactControllerTest, ReturnsContactsAsJson) {
 
 TEST_F(ContactControllerTest, ReturnsEmptyJsonArrayWhenServiceReturnsNoContacts) {
     expectContactsResponse();
+}
+
+TEST_F(ContactControllerTest, ReturnsRequestedContactAsJson) {
+    service_.contacts = {
+        {3, "Alex Quinn", "+1-202-555-0102", "103 Example Avenue"},
+        {17, "Maya Carter", "+1-202-555-0116", "117 Example Avenue"},
+    };
+
+    const auto response = controller_.getContactById("17");
+    ASSERT_NE(response, nullptr);
+    EXPECT_EQ(200, response->getStatus().code);
+    const auto json = responseJson(response);
+    ASSERT_NE(json, nullptr);
+    const auto contact = mapper_->readFromString<oatpp::Object<JsonContact>>(json);
+    ASSERT_NE(contact.get(), nullptr);
+    EXPECT_EQ(17, contact->id.getValue(0));
+    EXPECT_EQ("Maya Carter", contact->name.getValue(""));
+    EXPECT_EQ("+1-202-555-0116", contact->phone.getValue(""));
+    EXPECT_EQ("117 Example Avenue", contact->address.getValue(""));
+}
+
+TEST_F(ContactControllerTest, ReturnsNotFoundForMissingContact) {
+    const auto response = controller_.getContactById("999");
+    ASSERT_NE(response, nullptr);
+    EXPECT_EQ(404, response->getStatus().code);
+    const auto json = responseJson(response);
+    ASSERT_NE(json, nullptr);
+    const auto error = mapper_->readFromString<oatpp::Object<ErrorDto>>(json);
+    ASSERT_NE(error.get(), nullptr);
+    EXPECT_EQ("contact_not_found", error->code.getValue(""));
+    EXPECT_EQ("Contact not found.", error->message.getValue(""));
+}
+
+TEST_F(ContactControllerTest, ReturnsBadRequestForInvalidContactIds) {
+    for (const char* id : {"abc", "17x", "0", "-1", "9223372036854775808"}) {
+        SCOPED_TRACE(id);
+        const auto response = controller_.getContactById(id);
+        ASSERT_NE(response, nullptr);
+        EXPECT_EQ(400, response->getStatus().code);
+        const auto json = responseJson(response);
+        ASSERT_NE(json, nullptr);
+        const auto error = mapper_->readFromString<oatpp::Object<ErrorDto>>(json);
+        ASSERT_NE(error.get(), nullptr);
+        EXPECT_EQ("invalid_contact_id", error->code.getValue(""));
+    }
 }
 
 }  // namespace

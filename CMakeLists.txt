@@ -23,6 +23,7 @@ configure_file(migrations/init_db.sql migrations/init_db.sql COPYONLY)
 
 add_executable(phonebook_api
     src/main.cpp
+    src/server.cpp
     src/http/contact_controller.cpp
     src/http/health_controller.cpp
     src/storage/sqlite/sqlite_contact_repository.cpp

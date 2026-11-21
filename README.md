@@ -4,7 +4,7 @@ A lightweight C++ REST API for managing phone contacts, built with Oat++ and bac
 
 ## Install and run
 
-Run the commands from the repository root. The server build uses CMake 3.24 or newer and Oat++ 1.3.x.
+Run the commands from the repository root. The server build uses a C++17 compiler, CMake 3.24 or newer, and Oat++ 1.3.x.
 CMake downloads `oatpp-swagger` on the first configure.
 
 ### macOS
@@ -41,11 +41,13 @@ With the server running, check it from a second terminal.
 ```sh
 curl -i http://127.0.0.1:8000/health
 curl -i http://127.0.0.1:8000/contacts
+curl -i http://127.0.0.1:8000/contacts/1
 ```
 
 `/health` returns `200 OK` with the body `OK`. `/contacts` returns a JSON array sorted by `id`.
+`/contacts/{id}` returns one contact with `200 OK`. The ID must be a positive 64-bit integer. Invalid IDs receive `400 Bad Request` (`invalid_contact_id`), and missing contacts receive `404 Not Found` (`contact_not_found`). These errors include a JSON `code` and `message`.
 
-Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore both routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) describes the `/contacts` response as an array of `ContactDto` objects.
+Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore the routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) describes `ContactDto` and the lookup errors.
 
 On first start, `init_db.sql` initializes `phonebook.db` in the working directory with 69 fictional contacts. Restarts reuse that database. Press `Ctrl+C` in the server terminal to stop it.
 

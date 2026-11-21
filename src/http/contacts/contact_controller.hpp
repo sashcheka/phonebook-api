@@ -17,8 +17,14 @@ public:
     }
     ENDPOINT("GET", "/contacts", listContacts);
 
+    ENDPOINT_INFO(getContactById) {
+        describeGetContactById(*info);
+    }
+    ENDPOINT("GET", "/contacts/{id}", getContactById, PATH(String, id));
+
 private:
     static void describeListContacts(oatpp::web::server::api::Endpoint::Info& info);
+    static void describeGetContactById(oatpp::web::server::api::Endpoint::Info& info);
 
     const IContactService& service_;
 };

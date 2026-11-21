@@ -14,6 +14,10 @@ public:
     ContactController(const std::shared_ptr<oatpp::data::mapping::ObjectMapper>& mapper,
                       const ContactService& service);
 
+    ENDPOINT_INFO(listContacts) {
+        info->summary = "List contacts";
+        info->addResponse<ContactListDto>(Status::CODE_200, "application/json");
+    }
     ENDPOINT("GET", "/contacts", listContacts);
 
 private:

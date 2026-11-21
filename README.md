@@ -5,6 +5,7 @@ A lightweight C++ REST API for managing phone contacts, built with Oat++ and bac
 ## Install and run
 
 Run the commands from the repository root. The server build uses CMake 3.24 or newer and Oat++ 1.3.x.
+CMake downloads `oatpp-swagger` on the first configure.
 
 ### macOS
 
@@ -43,6 +44,8 @@ curl -i http://127.0.0.1:8000/contacts
 ```
 
 `/health` returns `200 OK` with the body `OK`. `/contacts` returns a JSON array sorted by `id`.
+
+Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore both routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) describes the `/contacts` response as an array of `ContactDto` objects.
 
 On first start, `init_db.sql` initializes `phonebook.db` in the working directory with 69 fictional contacts. Restarts reuse that database. Press `Ctrl+C` in the server terminal to stop it.
 

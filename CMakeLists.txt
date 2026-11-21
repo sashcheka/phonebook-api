@@ -1,15 +1,16 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(phonebook_api LANGUAGES CXX)
-find_package(oatpp REQUIRED)
-find_package(oatpp-sqlite CONFIG QUIET)
 
+# Dependencies
+find_package(oatpp REQUIRED)
+include(FetchContent)
+set(OATPP_MODULES_LOCATION CUSTOM CACHE STRING "Oat++ location for bundled modules")
+set(OATPP_BUILD_TESTS OFF CACHE BOOL "Build bundled Oat++ module tests")
+set(OATPP_INSTALL OFF CACHE BOOL "Install bundled Oat++ modules")
+
+find_package(oatpp-sqlite CONFIG QUIET)
 if(NOT TARGET oatpp::oatpp-sqlite)
-    include(FetchContent)
-    # Use the Oat++ target already found above. The module's default lookup requests 1.3.0.
-    set(OATPP_MODULES_LOCATION CUSTOM CACHE STRING "Oat++ location for oatpp-sqlite")
-    set(OATPP_BUILD_TESTS OFF)
-    set(OATPP_INSTALL OFF)
     FetchContent_Declare(oatpp_sqlite
         URL https://codeload.github.com/oatpp/oatpp-sqlite/tar.gz/95488343163a9111f03709f68e4944aa46217962
         URL_HASH SHA256=013b374d774d41ec1de34c6dbae7f401c98f6ba28a24f56cbba14c4ea8d90088
@@ -19,19 +20,36 @@ if(NOT TARGET oatpp::oatpp-sqlite)
     add_library(oatpp::oatpp-sqlite ALIAS oatpp-sqlite)
 endif()
 
-configure_file(migrations/init_db.sql migrations/init_db.sql COPYONLY)
+FetchContent_Declare(oatpp_swagger
+    URL https://codeload.github.com/oatpp/oatpp-swagger/tar.gz/refs/tags/1.3.1
+    URL_HASH SHA256=c2ec7d07f4dedbd4a2fef5ee450a839000b59be73fadbe1fbe67857752482a9f
+    DOWNLOAD_NAME oatpp-swagger-1.3.1.tar.gz
+)
+# Swagger 1.3.1 requests a policy version that CMake 4 has removed.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.13)
+FetchContent_MakeAvailable(oatpp_swagger)
+unset(CMAKE_POLICY_VERSION_MINIMUM)
 
+# Server
 add_executable(phonebook_api
     src/main.cpp
     src/server.cpp
     src/http/contacts/contact_controller.cpp
     src/http/health_controller.cpp
+    src/http/swagger/swagger.cpp
     src/storage/sqlite/sqlite_contact_repository.cpp
 )
 target_include_directories(phonebook_api PRIVATE src)
-target_link_libraries(phonebook_api PRIVATE oatpp::oatpp oatpp::oatpp-sqlite)
+target_link_libraries(phonebook_api PRIVATE
+    oatpp::oatpp
+    oatpp::oatpp-sqlite
+    oatpp-swagger
+)
+
+configure_file(migrations/init_db.sql migrations/init_db.sql COPYONLY)
 target_compile_definitions(phonebook_api PRIVATE
     PHONEBOOK_MIGRATIONS_DIR="${CMAKE_CURRENT_BINARY_DIR}/migrations"
+    PHONEBOOK_SWAGGER_RES_DIR="${oatpp_swagger_SOURCE_DIR}/res"
 )
 
 include(CTest)

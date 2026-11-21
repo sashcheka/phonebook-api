@@ -1,4 +1,4 @@
-#include "application/contact_service.hpp"
+#include "application/contact_service_interface.hpp"
 #include "http/contacts/contact_controller.hpp"
 
 #include <gtest/gtest.h>
@@ -19,7 +19,7 @@ class JsonContact : public oatpp::DTO {
 };
 #include OATPP_CODEGEN_END(DTO)
 
-class ContactRepositoryStub : public IContactRepository {
+class ContactServiceStub : public IContactService {
 public:
     std::vector<Contact> contacts;
 
@@ -28,8 +28,7 @@ public:
 
 class ContactControllerTest : public ::testing::Test {
 protected:
-    ContactRepositoryStub repository_;
-    ContactService service_{repository_};
+    ContactServiceStub service_;
     std::shared_ptr<oatpp::parser::json::mapping::ObjectMapper> mapper_ =
         oatpp::parser::json::mapping::ObjectMapper::createShared();
     ContactController controller_{mapper_, service_};
@@ -47,10 +46,10 @@ protected:
         const oatpp::String json(reinterpret_cast<const char*>(data), body->getKnownSize());
         const auto contacts = mapper_->readFromString<oatpp::Vector<oatpp::Object<JsonContact>>>(json);
         ASSERT_NE(contacts, nullptr);
-        ASSERT_EQ(repository_.contacts.size(), contacts->size());
+        ASSERT_EQ(service_.contacts.size(), contacts->size());
 
         for (std::size_t index = 0; index < contacts->size(); ++index) {
-            const auto& expected = repository_.contacts[index];
+            const auto& expected = service_.contacts[index];
             const auto& actual = contacts[index];
             ASSERT_NE(actual.get(), nullptr);
             EXPECT_EQ(expected.id, actual->id.getValue(0));
@@ -62,7 +61,7 @@ protected:
 };
 
 TEST_F(ContactControllerTest, ReturnsContactsAsJson) {
-    repository_.contacts = {
+    service_.contacts = {
         {3, "Alex \"AJ\" Quinn", "+1-202-555-0102", "103 Example Avenue"},
         {17, "Maya Carter", "+1-202-555-0116", "117 Example Avenue"},
     };
@@ -70,7 +69,7 @@ TEST_F(ContactControllerTest, ReturnsContactsAsJson) {
     expectContactsResponse();
 }
 
-TEST_F(ContactControllerTest, ReturnsEmptyJsonArrayWhenRepositoryIsEmpty) {
+TEST_F(ContactControllerTest, ReturnsEmptyJsonArrayWhenServiceReturnsNoContacts) {
     expectContactsResponse();
 }
 

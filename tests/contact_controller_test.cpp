@@ -59,6 +59,18 @@ public:
         return Contact{id, fields.name, fields.phone, fields.address};
     }
 
+    std::optional<Contact> updateContactFields(std::int64_t id, const ContactPatch& patch) const override {
+        checkWrite();
+        auto contact = findContactById(id);
+        if (!contact) {
+            return std::nullopt;
+        }
+        contact->name = patch.name.value_or(contact->name);
+        contact->phone = patch.phone.value_or(contact->phone);
+        contact->address = patch.address.value_or(contact->address);
+        return contact;
+    }
+
 private:
     void checkWrite() const {
         if (reject_contact_data) {

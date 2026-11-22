@@ -9,12 +9,16 @@ class ContactRepositoryStub : public IContactRepository {
 public:
     mutable std::optional<ContactFields> inserted;
     mutable std::optional<Contact> updated;
+    mutable std::optional<ContactPatch> patched;
+    mutable std::optional<std::int64_t> looked_up_id;
+    std::optional<Contact> existing;
 
     std::vector<Contact> listContacts() const override { return {}; }
 
     std::optional<Contact> findContactById(std::int64_t id) const override {
-        ADD_FAILURE() << "Repository received invalid contact ID " << id;
-        return std::nullopt;
+        EXPECT_GT(id, 0);
+        looked_up_id = id;
+        return existing;
     }
 
     Contact createContact(const ContactFields& fields) const override {
@@ -26,6 +30,11 @@ public:
         updated = Contact{id, fields.name, fields.phone, fields.address};
         return updated;
     }
+
+    std::optional<Contact> updateContactFields(std::int64_t, const ContactPatch& patch) const override {
+        patched = patch;
+        return existing;
+    }
 };
 
 TEST(ContactServiceTest, RejectsNonPositiveIdsBeforeCallingRepository) {
@@ -34,6 +43,7 @@ TEST(ContactServiceTest, RejectsNonPositiveIdsBeforeCallingRepository) {
 
     EXPECT_THROW(service.findContactById(0), InvalidContactId);
     EXPECT_THROW(service.findContactById(-1), InvalidContactId);
+    EXPECT_FALSE(repository.looked_up_id.has_value());
 }
 
 TEST(ContactServiceTest, RejectsBlankContactFieldsBeforeCallingRepository) {

@@ -16,6 +16,7 @@ public:
     std::optional<Contact> findContactById(std::int64_t id) const override;
     Contact createContact(const ContactFields& fields) const override;
     std::optional<Contact> replaceContact(std::int64_t id, const ContactFields& fields) const override;
+    std::optional<Contact> updateContactFields(std::int64_t id, const ContactPatch& patch) const override;
 
 private:
     const IContactRepository& repository_;

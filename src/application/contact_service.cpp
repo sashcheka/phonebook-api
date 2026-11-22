@@ -46,3 +46,20 @@ std::optional<Contact> ContactService::replaceContact(std::int64_t id, const Con
     validateContactFields(fields);
     return repository_.replaceContact(id, fields);
 }
+
+std::optional<Contact> ContactService::updateContactFields(std::int64_t id, const ContactPatch& patch) const {
+    requirePositiveId(id);
+    if (!patch.name && !patch.phone && !patch.address) {
+        return repository_.findContactById(id);
+    }
+    if (patch.name) {
+        requireNonBlank(*patch.name, "name");
+    }
+    if (patch.phone) {
+        requireNonBlank(*patch.phone, "phone");
+    }
+    if (patch.address) {
+        requireNonBlank(*patch.address, "address");
+    }
+    return repository_.updateContactFields(id, patch);
+}

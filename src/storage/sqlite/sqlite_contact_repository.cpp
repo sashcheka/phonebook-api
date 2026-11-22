@@ -22,6 +22,10 @@ Contact toContact(const oatpp::Object<ContactRow>& row) {
     return {*row->id, *row->name, *row->phone, *row->address};
 }
 
+oatpp::String toSqlString(const std::optional<std::string>& value) {
+    return value ? oatpp::String(*value) : oatpp::String(nullptr);
+}
+
 }  // namespace
 
 #include OATPP_CODEGEN_BEGIN(DbClient)
@@ -43,7 +47,8 @@ public:
           "RETURNING id, name, phone, address;",
           PARAM(oatpp::String, name), PARAM(oatpp::String, phone), PARAM(oatpp::String, address))
     QUERY(updateContactById,
-          "UPDATE contacts SET name = :name, phone = :phone, address = :address WHERE id = :id "
+          "UPDATE contacts SET name = COALESCE(:name, name), phone = COALESCE(:phone, phone), "
+          "address = COALESCE(:address, address) WHERE id = :id "
           "RETURNING id, name, phone, address;",
           PARAM(oatpp::Int64, id), PARAM(oatpp::String, name),
           PARAM(oatpp::String, phone), PARAM(oatpp::String, address))
@@ -99,7 +104,12 @@ Contact SqliteContactRepository::createContact(const ContactFields& fields) cons
 }
 
 std::optional<Contact> SqliteContactRepository::replaceContact(std::int64_t id, const ContactFields& fields) const {
-    auto result = client_->updateContactById(id, fields.name, fields.phone, fields.address);
+    return updateContactFields(id, {fields.name, fields.phone, fields.address});
+}
+
+std::optional<Contact> SqliteContactRepository::updateContactFields(std::int64_t id, const ContactPatch& patch) const {
+    auto result = client_->updateContactById(
+        id, toSqlString(patch.name), toSqlString(patch.phone), toSqlString(patch.address));
     if (!result->isSuccess()) {
         throw std::runtime_error("Could not update contact: " + *result->getErrorMessage());
     }

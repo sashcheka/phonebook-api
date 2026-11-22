@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <stdexcept>
 #include <vector>
 
 namespace {
@@ -26,6 +27,9 @@ class ContactServiceStub : public IContactService {
 public:
     std::vector<Contact> contacts;
     bool reject_id = false;
+    bool reject_creation = false;
+    bool fail_creation = false;
+    mutable std::optional<NewContact> create_input;
 
     std::vector<Contact> listContacts() const override { return contacts; }
 
@@ -39,6 +43,17 @@ public:
             }
         }
         return std::nullopt;
+    }
+
+    Contact createContact(const NewContact& contact) const override {
+        create_input = contact;
+        if (reject_creation) {
+            throw InvalidContactData("The name field must not be empty.");
+        }
+        if (fail_creation) {
+            throw std::runtime_error("Internal SQLite error");
+        }
+        return {70, contact.name, contact.phone, contact.address};
     }
 };
 

@@ -38,6 +38,10 @@ public:
     QUERY(selectContacts, "SELECT id, name, phone, address FROM contacts ORDER BY id;")
     QUERY(selectContactById, "SELECT id, name, phone, address FROM contacts WHERE id = :id;",
           PARAM(oatpp::Int64, id))
+    QUERY(insertContact,
+          "INSERT INTO contacts (name, phone, address) VALUES (:name, :phone, :address) "
+          "RETURNING id, name, phone, address;",
+          PARAM(oatpp::String, name), PARAM(oatpp::String, phone), PARAM(oatpp::String, address))
 };
 
 #include OATPP_CODEGEN_END(DbClient)
@@ -72,6 +76,19 @@ std::optional<Contact> SqliteContactRepository::findContactById(std::int64_t id)
     const auto rows = result->fetch<oatpp::Vector<oatpp::Object<ContactRow>>>();
     if (rows->empty()) {
         return std::nullopt;
+    }
+    return toContact(rows[0]);
+}
+
+Contact SqliteContactRepository::createContact(const NewContact& contact) const {
+    auto result = client_->insertContact(contact.name, contact.phone, contact.address);
+    if (!result->isSuccess()) {
+        throw std::runtime_error("Could not create contact: " + *result->getErrorMessage());
+    }
+
+    const auto rows = result->fetch<oatpp::Vector<oatpp::Object<ContactRow>>>();
+    if (!result->isSuccess() || rows->empty()) {
+        throw std::runtime_error("Could not complete contact creation.");
     }
     return toContact(rows[0]);
 }

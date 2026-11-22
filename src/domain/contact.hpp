@@ -9,3 +9,9 @@ struct Contact {
     std::string phone;
     std::string address;
 };
+
+struct NewContact {
+    std::string name;
+    std::string phone;
+    std::string address;
+};

@@ -2,6 +2,7 @@
 
 #include "application/contact_service_interface.hpp"
 #include "http/contacts/contact_dto.hpp"
+#include "http/contacts/contact_patch_dto.hpp"
 #include "http/contacts/create_contact_dto.hpp"
 #include "http/contacts/update_contact_dto.hpp"
 #include "http/error_dto.hpp"
@@ -69,6 +70,31 @@ std::optional<ContactFields> readContactFields(const oatpp::String& body) {
     }
 }
 
+std::optional<ContactPatch> readContactPatch(const oatpp::String& body) {
+    const auto json = parseJsonBody(body);
+    if (!json.is_object()) {
+        return std::nullopt;
+    }
+
+    ContactPatch patch;
+    for (const auto& [field, value] : json.items()) {
+        if (!value.is_string()) {
+            return std::nullopt;
+        }
+        const auto& text = value.get_ref<const std::string&>();
+        if (field == "name") {
+            patch.name = text;
+        } else if (field == "phone") {
+            patch.phone = text;
+        } else if (field == "address") {
+            patch.address = text;
+        } else {
+            return std::nullopt;
+        }
+    }
+    return patch;
+}
+
 }  // namespace
 
 ContactController::ContactController(
@@ -101,6 +127,18 @@ void ContactController::describeUpdateContact(oatpp::web::server::api::Endpoint:
     info.summary = "Replace a contact's fields";
     info.pathParams["id"].description = "Positive 64-bit integer";
     info.addConsumes<oatpp::Object<UpdateContactDto>>("application/json");
+    info.addResponse<oatpp::Object<ContactDto>>(Status::CODE_200, "application/json");
+    info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_400, "application/json",
+                                             "Invalid ID, request body, or contact fields");
+    info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_404, "application/json", "Contact not found");
+    info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_500, "application/json", "Could not update contact");
+}
+
+void ContactController::describePatchContact(oatpp::web::server::api::Endpoint::Info& info) {
+    info.summary = "Update selected contact fields";
+    info.pathParams["id"].description = "Positive 64-bit integer";
+    info.body.description = "Supply the fields to change. Null values and unknown fields are invalid.";
+    info.addConsumes<oatpp::Object<ContactPatchDto>>("application/merge-patch+json");
     info.addResponse<oatpp::Object<ContactDto>>(Status::CODE_200, "application/json");
     info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_400, "application/json",
                                              "Invalid ID, request body, or contact fields");
@@ -183,6 +221,37 @@ std::shared_ptr<ContactController::OutgoingResponse> ContactController::updateCo
         return createDtoResponse(Status::CODE_400, makeError("invalid_contact_data", exception.what()));
     } catch (const std::exception& exception) {
         OATPP_LOGE("ContactController", "PUT /contacts/{id}: %s", exception.what());
+        return createDtoResponse(
+            Status::CODE_500, makeError("contact_update_failed", "Could not update contact."));
+    }
+}
+
+std::shared_ptr<ContactController::OutgoingResponse> ContactController::patchContact(
+    const oatpp::String& id, const oatpp::String& body) {
+    const auto contact_id = parseContactId(id);
+    if (!contact_id) {
+        return createDtoResponse(Status::CODE_400,
+                                 makeError("invalid_contact_id", "Contact ID must be a positive integer."));
+    }
+
+    const auto patch = readContactPatch(body);
+    if (!patch) {
+        return createDtoResponse(
+            Status::CODE_400, makeError("invalid_json", "Expected a JSON object with optional string fields: name, phone, address."));
+    }
+
+    try {
+        const auto contact = service_.updateContactFields(*contact_id, *patch);
+        if (!contact) {
+            return createDtoResponse(Status::CODE_404, makeError("contact_not_found", "Contact not found."));
+        }
+        return createDtoResponse(Status::CODE_200, toContactDto(*contact));
+    } catch (const InvalidContactId& exception) {
+        return createDtoResponse(Status::CODE_400, makeError("invalid_contact_id", exception.what()));
+    } catch (const InvalidContactData& exception) {
+        return createDtoResponse(Status::CODE_400, makeError("invalid_contact_data", exception.what()));
+    } catch (const std::exception& exception) {
+        OATPP_LOGE("ContactController", "PATCH /contacts/{id}: %s", exception.what());
         return createDtoResponse(
             Status::CODE_500, makeError("contact_update_failed", "Could not update contact."));
     }

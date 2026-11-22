@@ -48,6 +48,9 @@ curl -i -X POST http://127.0.0.1:8000/contacts \
 curl -i -X PUT http://127.0.0.1:8000/contacts/17 \
   -H 'Content-Type: application/json' \
   -d '{"name":"Maya Carter","phone":"00456","address":"117 Example Avenue"}'
+curl -i -X PATCH http://127.0.0.1:8000/contacts/17 \
+  -H 'Content-Type: application/merge-patch+json' \
+  -d '{"phone":"00789"}'
 ```
 
 `/health` returns `200 OK` with the body `OK`. `/contacts` returns a JSON array sorted by `id`.
@@ -57,7 +60,9 @@ curl -i -X PUT http://127.0.0.1:8000/contacts/17 \
 
 `PUT /contacts/{id}` replaces the name, phone, and address of an existing contact. Send all three non-blank strings. The response contains the updated contact with the same ID and status `200 OK`. Invalid input returns `400`, a missing contact returns `404`, and a storage failure returns `500`.
 
-Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore the routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) includes the creation and update schemas.
+`PATCH /contacts/{id}` updates only the supplied fields and returns the resulting contact with `200 OK`. An empty object returns the current contact. Nulls, blank strings, unknown fields, and attempts to change `id` return `400`. Missing contacts return `404`, and storage failures return `500`.
+
+Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore the routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) includes the creation, replacement, and partial update schemas.
 
 On first start, `init_db.sql` initializes `phonebook.db` in the working directory with 69 fictional contacts. Restarts reuse that database. Press `Ctrl+C` in the server terminal to stop it.
 

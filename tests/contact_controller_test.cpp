@@ -51,7 +51,7 @@ public:
         return {70, fields.name, fields.phone, fields.address};
     }
 
-    std::optional<Contact> updateContact(std::int64_t id, const ContactFields& fields) const override {
+    std::optional<Contact> replaceContact(std::int64_t id, const ContactFields& fields) const override {
         checkWrite();
         if (!findContactById(id)) {
             return std::nullopt;

@@ -98,7 +98,7 @@ Contact SqliteContactRepository::createContact(const ContactFields& fields) cons
     return toContact(rows[0]);
 }
 
-std::optional<Contact> SqliteContactRepository::updateContact(std::int64_t id, const ContactFields& fields) const {
+std::optional<Contact> SqliteContactRepository::replaceContact(std::int64_t id, const ContactFields& fields) const {
     auto result = client_->updateContactById(id, fields.name, fields.phone, fields.address);
     if (!result->isSuccess()) {
         throw std::runtime_error("Could not update contact: " + *result->getErrorMessage());

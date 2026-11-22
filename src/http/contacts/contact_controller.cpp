@@ -45,12 +45,16 @@ std::optional<std::int64_t> parseContactId(const oatpp::String& id) {
     return value;
 }
 
-std::optional<ContactFields> readContactFields(const oatpp::String& body) {
+nlohmann::json parseJsonBody(const oatpp::String& body) {
     if (!body || body->find('\0') != std::string::npos) {
-        return std::nullopt;
+        return nullptr;
     }
     // Some Oat++ 1.3 releases accept missing or trailing commas.
-    const auto json = nlohmann::json::parse(*body, nullptr, false);
+    return nlohmann::json::parse(*body, nullptr, false);
+}
+
+std::optional<ContactFields> readContactFields(const oatpp::String& body) {
+    const auto json = parseJsonBody(body);
     if (!json.is_object()) {
         return std::nullopt;
     }
@@ -168,7 +172,7 @@ std::shared_ptr<ContactController::OutgoingResponse> ContactController::updateCo
     }
 
     try {
-        const auto contact = service_.updateContact(*contact_id, *input);
+        const auto contact = service_.replaceContact(*contact_id, *input);
         if (!contact) {
             return createDtoResponse(Status::CODE_404, makeError("contact_not_found", "Contact not found."));
         }

@@ -22,7 +22,7 @@ public:
         return {70, fields.name, fields.phone, fields.address};
     }
 
-    std::optional<Contact> updateContact(std::int64_t id, const ContactFields& fields) const override {
+    std::optional<Contact> replaceContact(std::int64_t id, const ContactFields& fields) const override {
         updated = Contact{id, fields.name, fields.phone, fields.address};
         return updated;
     }
@@ -63,8 +63,8 @@ TEST(ContactServiceTest, RejectsInvalidUpdateBeforeCallingRepository) {
     const ContactRepositoryStub repository;
     const ContactService service{repository};
 
-    EXPECT_THROW(service.updateContact(0, {"Alex Quinn", "00123", "103 Example Avenue"}), InvalidContactId);
-    EXPECT_THROW(service.updateContact(17, {"Alex Quinn", " ", "103 Example Avenue"}), InvalidContactData);
+    EXPECT_THROW(service.replaceContact(0, {"Alex Quinn", "00123", "103 Example Avenue"}), InvalidContactId);
+    EXPECT_THROW(service.replaceContact(17, {"Alex Quinn", " ", "103 Example Avenue"}), InvalidContactData);
     EXPECT_FALSE(repository.updated.has_value());
 }
 
@@ -73,7 +73,7 @@ TEST(ContactServiceTest, UpdatesContactThroughRepository) {
     const ContactService service{repository};
     const ContactFields input{"Maya Carter", "00456", "117 Example Avenue"};
 
-    const auto updated = service.updateContact(17, input);
+    const auto updated = service.replaceContact(17, input);
     ASSERT_TRUE(repository.updated.has_value());
     ASSERT_TRUE(updated.has_value());
     EXPECT_EQ(17, repository.updated->id);

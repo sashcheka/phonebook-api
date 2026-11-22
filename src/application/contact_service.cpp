@@ -41,8 +41,8 @@ Contact ContactService::createContact(const ContactFields& fields) const {
     return repository_.createContact(fields);
 }
 
-std::optional<Contact> ContactService::updateContact(std::int64_t id, const ContactFields& fields) const {
+std::optional<Contact> ContactService::replaceContact(std::int64_t id, const ContactFields& fields) const {
     requirePositiveId(id);
     validateContactFields(fields);
-    return repository_.updateContact(id, fields);
+    return repository_.replaceContact(id, fields);
 }

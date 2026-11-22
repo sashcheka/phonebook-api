@@ -4,7 +4,13 @@
 
 #include <cstdint>
 #include <optional>
+#include <stdexcept>
 #include <vector>
+
+class InvalidContactId : public std::invalid_argument {
+public:
+    using std::invalid_argument::invalid_argument;
+};
 
 class IContactService {
 public:

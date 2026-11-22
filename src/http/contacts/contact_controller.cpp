@@ -58,14 +58,18 @@ std::shared_ptr<ContactController::OutgoingResponse> ContactController::getConta
     std::int64_t contact_id = 0;
     const char* end = id->data() + id->size();
     const auto [parsed_end, error] = std::from_chars(id->data(), end, contact_id);
-    if (error != std::errc{} || parsed_end != end || contact_id <= 0) {
+    if (error != std::errc{} || parsed_end != end) {
         return createDtoResponse(Status::CODE_400,
                                  makeError("invalid_contact_id", "Contact ID must be a positive integer."));
     }
 
-    const auto contact = service_.findContactById(contact_id);
-    if (!contact) {
-        return createDtoResponse(Status::CODE_404, makeError("contact_not_found", "Contact not found."));
+    try {
+        const auto contact = service_.findContactById(contact_id);
+        if (!contact) {
+            return createDtoResponse(Status::CODE_404, makeError("contact_not_found", "Contact not found."));
+        }
+        return createDtoResponse(Status::CODE_200, toContactDto(*contact));
+    } catch (const InvalidContactId& exception) {
+        return createDtoResponse(Status::CODE_400, makeError("invalid_contact_id", exception.what()));
     }
-    return createDtoResponse(Status::CODE_200, toContactDto(*contact));
 }

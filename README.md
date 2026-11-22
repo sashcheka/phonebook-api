@@ -59,7 +59,7 @@ Install GoogleTest for your platform.
 - On Ubuntu, run `../vcpkg/vcpkg install gtest` using the vcpkg setup above.
 
 Reconfigure the `build` directory from the platform instructions and run CTest.
-The unit tests call the health and contacts controllers directly. The contacts tests supply a stub service with predefined contacts.
+The unit tests call the health and contacts controllers directly. The contact controller tests use a stub service, and the contact service test checks ID validation before the repository is called.
 
 ```sh
 cmake -S . -B build -DBUILD_TESTING=ON

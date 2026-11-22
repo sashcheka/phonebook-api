@@ -10,6 +10,8 @@ add_executable(health_test
 add_executable(contact_test
     test_main.cpp
     contact_controller_test.cpp
+    contact_service_test.cpp
+    ${PROJECT_SOURCE_DIR}/src/application/contact_service.cpp
     ${PROJECT_SOURCE_DIR}/src/http/contacts/contact_controller.cpp
 )
 target_compile_features(contact_test PRIVATE cxx_std_17)

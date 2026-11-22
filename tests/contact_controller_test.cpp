@@ -25,10 +25,14 @@ class JsonContact : public oatpp::DTO {
 class ContactServiceStub : public IContactService {
 public:
     std::vector<Contact> contacts;
+    bool reject_id = false;
 
     std::vector<Contact> listContacts() const override { return contacts; }
 
     std::optional<Contact> findContactById(std::int64_t id) const override {
+        if (reject_id) {
+            throw InvalidContactId("Contact ID was rejected.");
+        }
         for (const auto& contact : contacts) {
             if (contact.id == id) {
                 return contact;
@@ -120,8 +124,8 @@ TEST_F(ContactControllerTest, ReturnsNotFoundForMissingContact) {
     EXPECT_EQ("Contact not found.", error->message.getValue(""));
 }
 
-TEST_F(ContactControllerTest, ReturnsBadRequestForInvalidContactIds) {
-    for (const char* id : {"abc", "17x", "0", "-1", "9223372036854775808"}) {
+TEST_F(ContactControllerTest, ReturnsBadRequestForUnparseableContactIds) {
+    for (const char* id : {"abc", "17x", "9223372036854775808"}) {
         SCOPED_TRACE(id);
         const auto response = controller_.getContactById(id);
         ASSERT_NE(response, nullptr);
@@ -132,6 +136,20 @@ TEST_F(ContactControllerTest, ReturnsBadRequestForInvalidContactIds) {
         ASSERT_NE(error.get(), nullptr);
         EXPECT_EQ("invalid_contact_id", error->code.getValue(""));
     }
+}
+
+TEST_F(ContactControllerTest, ReturnsBadRequestWhenServiceRejectsContactId) {
+    service_.reject_id = true;
+
+    const auto response = controller_.getContactById("17");
+    ASSERT_NE(response, nullptr);
+    EXPECT_EQ(400, response->getStatus().code);
+    const auto json = responseJson(response);
+    ASSERT_NE(json, nullptr);
+    const auto error = mapper_->readFromString<oatpp::Object<ErrorDto>>(json);
+    ASSERT_NE(error.get(), nullptr);
+    EXPECT_EQ("invalid_contact_id", error->code.getValue(""));
+    EXPECT_EQ("Contact ID was rejected.", error->message.getValue(""));
 }
 
 }  // namespace

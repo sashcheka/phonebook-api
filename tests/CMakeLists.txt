@@ -15,6 +15,7 @@ add_executable(contact_test
     ${PROJECT_SOURCE_DIR}/src/http/contacts/contact_controller.cpp
 )
 target_compile_features(contact_test PRIVATE cxx_std_17)
+target_link_libraries(contact_test PRIVATE nlohmann_json::nlohmann_json)
 
 set_target_properties(health_test contact_test PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}"

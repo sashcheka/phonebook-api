@@ -22,9 +22,15 @@ public:
     }
     ENDPOINT("GET", "/contacts/{id}", getContactById, PATH(String, id));
 
+    ENDPOINT_INFO(createContact) {
+        describeCreateContact(*info);
+    }
+    ENDPOINT("POST", "/contacts", createContact, BODY_STRING(String, body));
+
 private:
     static void describeListContacts(oatpp::web::server::api::Endpoint::Info& info);
     static void describeGetContactById(oatpp::web::server::api::Endpoint::Info& info);
+    static void describeCreateContact(oatpp::web::server::api::Endpoint::Info& info);
 
     const IContactService& service_;
 };

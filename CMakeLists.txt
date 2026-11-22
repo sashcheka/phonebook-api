@@ -30,6 +30,12 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.13)
 FetchContent_MakeAvailable(oatpp_swagger)
 unset(CMAKE_POLICY_VERSION_MINIMUM)
 
+FetchContent_Declare(nlohmann_json
+    URL https://codeload.github.com/nlohmann/json/tar.gz/refs/tags/v3.12.0
+    URL_HASH SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 # Server
 add_executable(phonebook_api
     src/main.cpp
@@ -46,6 +52,7 @@ target_link_libraries(phonebook_api PRIVATE
     oatpp::oatpp
     oatpp::oatpp-sqlite
     oatpp-swagger
+    nlohmann_json::nlohmann_json
 )
 
 configure_file(migrations/init_db.sql migrations/init_db.sql COPYONLY)

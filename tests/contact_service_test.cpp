@@ -7,7 +7,7 @@ namespace {
 
 class ContactRepositoryStub : public IContactRepository {
 public:
-    mutable std::optional<NewContact> inserted;
+    mutable std::optional<ContactFields> inserted;
 
     std::vector<Contact> listContacts() const override { return {}; }
 
@@ -16,10 +16,11 @@ public:
         return std::nullopt;
     }
 
-    Contact createContact(const NewContact& contact) const override {
-        inserted = contact;
-        return {70, contact.name, contact.phone, contact.address};
+    Contact createContact(const ContactFields& fields) const override {
+        inserted = fields;
+        return {70, fields.name, fields.phone, fields.address};
     }
+
 };
 
 TEST(ContactServiceTest, RejectsNonPositiveIdsBeforeCallingRepository) {
@@ -43,7 +44,7 @@ TEST(ContactServiceTest, RejectsBlankContactFieldsBeforeCallingRepository) {
 TEST(ContactServiceTest, ReturnsContactCreatedByRepository) {
     const ContactRepositoryStub repository;
     const ContactService service{repository};
-    const NewContact input{"Alex Quinn", "00123", "103 Example Avenue"};
+    const ContactFields input{"Alex Quinn", "00123", "103 Example Avenue"};
 
     const auto created = service.createContact(input);
     ASSERT_TRUE(repository.inserted.has_value());

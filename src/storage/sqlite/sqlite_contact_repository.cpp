@@ -80,7 +80,7 @@ std::optional<Contact> SqliteContactRepository::findContactById(std::int64_t id)
     return toContact(rows[0]);
 }
 
-Contact SqliteContactRepository::createContact(const NewContact& contact) const {
+Contact SqliteContactRepository::createContact(const ContactFields& contact) const {
     auto result = client_->insertContact(contact.name, contact.phone, contact.address);
     if (!result->isSuccess()) {
         throw std::runtime_error("Could not create contact: " + *result->getErrorMessage());

@@ -26,7 +26,7 @@ std::optional<Contact> ContactService::findContactById(std::int64_t id) const {
     return repository_.findContactById(id);
 }
 
-Contact ContactService::createContact(const NewContact& contact) const {
+Contact ContactService::createContact(const ContactFields& contact) const {
     requireNonBlank(contact.name, "name");
     requireNonBlank(contact.phone, "phone");
     requireNonBlank(contact.address, "address");

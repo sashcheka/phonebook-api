@@ -10,7 +10,7 @@ struct Contact {
     std::string address;
 };
 
-struct NewContact {
+struct ContactFields {
     std::string name;
     std::string phone;
     std::string address;

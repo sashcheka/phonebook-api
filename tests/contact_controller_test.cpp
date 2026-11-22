@@ -27,9 +27,9 @@ class ContactServiceStub : public IContactService {
 public:
     std::vector<Contact> contacts;
     bool reject_id = false;
-    bool reject_creation = false;
-    bool fail_creation = false;
-    mutable std::optional<NewContact> create_input;
+    bool reject_contact_data = false;
+    bool fail_write = false;
+    mutable std::optional<ContactFields> create_input;
 
     std::vector<Contact> listContacts() const override { return contacts; }
 
@@ -45,15 +45,20 @@ public:
         return std::nullopt;
     }
 
-    Contact createContact(const NewContact& contact) const override {
-        create_input = contact;
-        if (reject_creation) {
+    Contact createContact(const ContactFields& fields) const override {
+        create_input = fields;
+        checkWrite();
+        return {70, fields.name, fields.phone, fields.address};
+    }
+
+private:
+    void checkWrite() const {
+        if (reject_contact_data) {
             throw InvalidContactData("The name field must not be empty.");
         }
-        if (fail_creation) {
+        if (fail_write) {
             throw std::runtime_error("Internal SQLite error");
         }
-        return {70, contact.name, contact.phone, contact.address};
     }
 };
 
@@ -204,7 +209,7 @@ TEST_F(ContactControllerTest, RejectsInvalidJsonBeforeCallingService) {
 }
 
 TEST_F(ContactControllerTest, ReturnsBadRequestWhenServiceRejectsContactData) {
-    service_.reject_creation = true;
+    service_.reject_contact_data = true;
 
     const auto response = controller_.createContact(
         R"({"name":"   ","phone":"00123","address":"103 Example Avenue"})");
@@ -219,7 +224,7 @@ TEST_F(ContactControllerTest, ReturnsBadRequestWhenServiceRejectsContactData) {
 }
 
 TEST_F(ContactControllerTest, ReturnsGenericErrorWhenCreationFails) {
-    service_.fail_creation = true;
+    service_.fail_write = true;
 
     const auto response = controller_.createContact(
         R"({"name":"Alex Quinn","phone":"00123","address":"103 Example Avenue"})");

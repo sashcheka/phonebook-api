@@ -31,7 +31,7 @@ oatpp::Object<ErrorDto> makeError(const char* code, const oatpp::String& message
     return error;
 }
 
-std::optional<NewContact> readNewContact(const oatpp::String& body) {
+std::optional<ContactFields> readContactFields(const oatpp::String& body) {
     if (!body || body->find('\0') != std::string::npos) {
         return std::nullopt;
     }
@@ -41,7 +41,7 @@ std::optional<NewContact> readNewContact(const oatpp::String& body) {
         return std::nullopt;
     }
     try {
-        return NewContact{
+        return ContactFields{
             json.value("name", std::string{}),
             json.value("phone", std::string{}),
             json.value("address", std::string{}),
@@ -110,7 +110,7 @@ std::shared_ptr<ContactController::OutgoingResponse> ContactController::getConta
 
 std::shared_ptr<ContactController::OutgoingResponse> ContactController::createContact(
     const oatpp::String& body) {
-    const auto input = readNewContact(body);
+    const auto input = readContactFields(body);
     if (!input) {
         return createDtoResponse(
             Status::CODE_400, makeError("invalid_json", "Expected a JSON object with string contact fields."));

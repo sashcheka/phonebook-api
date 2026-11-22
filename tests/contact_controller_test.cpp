@@ -85,6 +85,18 @@ protected:
         return {reinterpret_cast<const char*>(body->getKnownData()), body->getKnownSize()};
     }
 
+    void expectErrorResponse(const std::shared_ptr<ContactController::OutgoingResponse>& response,
+                             int status, const char* code, const char* message) {
+        ASSERT_NE(response, nullptr);
+        EXPECT_EQ(status, response->getStatus().code);
+        const auto json = responseJson(response);
+        ASSERT_NE(json, nullptr);
+        const auto error = mapper_->readFromString<oatpp::Object<ErrorDto>>(json);
+        ASSERT_NE(error.get(), nullptr);
+        EXPECT_EQ(code, error->code.getValue(""));
+        EXPECT_EQ(message, error->message.getValue(""));
+    }
+
     void expectContactsResponse() {
         const auto response = controller_.listContacts();
         ASSERT_NE(response, nullptr);
@@ -244,6 +256,52 @@ TEST_F(ContactControllerTest, ReturnsGenericErrorWhenCreationFails) {
     ASSERT_NE(error.get(), nullptr);
     EXPECT_EQ("contact_create_failed", error->code.getValue(""));
     EXPECT_EQ("Could not create contact.", error->message.getValue(""));
+}
+
+TEST_F(ContactControllerTest, ReturnsUpdatedContactWithSameId) {
+    service_.contacts = {{17, "Alex Quinn", "00123", "103 Example Avenue"}};
+
+    const auto response = controller_.updateContact(
+        "17", R"({"name":"Maya Carter","phone":"00456","address":"117 Example Avenue"})");
+    ASSERT_NE(response, nullptr);
+    EXPECT_EQ(200, response->getStatus().code);
+    const auto json = responseJson(response);
+    ASSERT_NE(json, nullptr);
+    const auto contact = mapper_->readFromString<oatpp::Object<JsonContact>>(json);
+    ASSERT_NE(contact.get(), nullptr);
+    EXPECT_EQ(17, contact->id.getValue(0));
+    EXPECT_EQ("Maya Carter", contact->name.getValue(""));
+    EXPECT_EQ("00456", contact->phone.getValue(""));
+    EXPECT_EQ("117 Example Avenue", contact->address.getValue(""));
+}
+
+TEST_F(ContactControllerTest, ReturnsNotFoundWhenUpdatingMissingContact) {
+    const auto response = controller_.updateContact(
+        "999", R"({"name":"Alex Quinn","phone":"00123","address":"103 Example Avenue"})");
+    expectErrorResponse(response, 404, "contact_not_found", "Contact not found.");
+}
+
+TEST_F(ContactControllerTest, RejectsInvalidUpdateRequests) {
+    const auto* body = R"({"name":"Alex Quinn","phone":"00123","address":"103 Example Avenue"})";
+    expectErrorResponse(controller_.updateContact("17x", body), 400, "invalid_contact_id",
+                        "Contact ID must be a positive integer.");
+    expectErrorResponse(controller_.updateContact("17", "{"), 400, "invalid_json",
+                        "Expected a JSON object with string contact fields.");
+
+    service_.reject_id = true;
+    expectErrorResponse(controller_.updateContact("-1", body), 400, "invalid_contact_id",
+                        "Contact ID was rejected.");
+    service_.reject_id = false;
+    service_.reject_contact_data = true;
+    expectErrorResponse(controller_.updateContact("17", body), 400, "invalid_contact_data",
+                        "The name field must not be empty.");
+}
+
+TEST_F(ContactControllerTest, ReturnsGenericErrorWhenUpdateFails) {
+    service_.fail_write = true;
+    const auto response = controller_.updateContact(
+        "17", R"({"name":"Alex Quinn","phone":"00123","address":"103 Example Avenue"})");
+    expectErrorResponse(response, 500, "contact_update_failed", "Could not update contact.");
 }
 
 }  // namespace

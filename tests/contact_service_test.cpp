@@ -59,4 +59,28 @@ TEST(ContactServiceTest, ReturnsContactCreatedByRepository) {
     EXPECT_EQ(70, created.id);
 }
 
+TEST(ContactServiceTest, RejectsInvalidUpdateBeforeCallingRepository) {
+    const ContactRepositoryStub repository;
+    const ContactService service{repository};
+
+    EXPECT_THROW(service.updateContact(0, {"Alex Quinn", "00123", "103 Example Avenue"}), InvalidContactId);
+    EXPECT_THROW(service.updateContact(17, {"Alex Quinn", " ", "103 Example Avenue"}), InvalidContactData);
+    EXPECT_FALSE(repository.updated.has_value());
+}
+
+TEST(ContactServiceTest, UpdatesContactThroughRepository) {
+    const ContactRepositoryStub repository;
+    const ContactService service{repository};
+    const ContactFields input{"Maya Carter", "00456", "117 Example Avenue"};
+
+    const auto updated = service.updateContact(17, input);
+    ASSERT_TRUE(repository.updated.has_value());
+    ASSERT_TRUE(updated.has_value());
+    EXPECT_EQ(17, repository.updated->id);
+    EXPECT_EQ(input.name, repository.updated->name);
+    EXPECT_EQ(input.phone, repository.updated->phone);
+    EXPECT_EQ(input.address, repository.updated->address);
+    EXPECT_EQ(17, updated->id);
+}
+
 }  // namespace

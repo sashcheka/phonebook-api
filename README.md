@@ -45,6 +45,9 @@ curl -i http://127.0.0.1:8000/contacts/1
 curl -i -X POST http://127.0.0.1:8000/contacts \
   -H 'Content-Type: application/json' \
   -d '{"name":"Alex Quinn","phone":"+1-202-555-0180","address":"103 Example Avenue"}'
+curl -i -X PUT http://127.0.0.1:8000/contacts/17 \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Maya Carter","phone":"00456","address":"117 Example Avenue"}'
 ```
 
 `/health` returns `200 OK` with the body `OK`. `/contacts` returns a JSON array sorted by `id`.
@@ -52,7 +55,9 @@ curl -i -X POST http://127.0.0.1:8000/contacts \
 
 `POST /contacts` requires non-blank strings for `name`, `phone`, and `address`. SQLite assigns the ID. A successful request returns `201 Created`, the new contact, and a `Location` header pointing to it. Invalid JSON or contact data returns `400`, and a storage failure returns `500` with a generic JSON message.
 
-Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore the routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) includes the creation request and response schemas.
+`PUT /contacts/{id}` replaces the name, phone, and address of an existing contact. Send all three non-blank strings. The response contains the updated contact with the same ID and status `200 OK`. Invalid input returns `400`, a missing contact returns `404`, and a storage failure returns `500`.
+
+Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore the routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) includes the creation and update schemas.
 
 On first start, `init_db.sql` initializes `phonebook.db` in the working directory with 69 fictional contacts. Restarts reuse that database. Press `Ctrl+C` in the server terminal to stop it.
 
@@ -64,7 +69,7 @@ Install GoogleTest for your platform.
 - On Ubuntu, run `../vcpkg/vcpkg install gtest` using the vcpkg setup above.
 
 Reconfigure the `build` directory from the platform instructions and run CTest.
-The unit tests call the health and contacts controllers directly. The contact controller tests use a stub service. The contact service tests verify validation and creation through a stub repository.
+The unit tests call the health and contacts controllers directly. The contact controller tests use a stub service. The contact service tests verify validation, creation, and updates through a stub repository.
 
 ```sh
 cmake -S . -B build -DBUILD_TESTING=ON

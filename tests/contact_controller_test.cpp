@@ -167,4 +167,70 @@ TEST_F(ContactControllerTest, ReturnsBadRequestWhenServiceRejectsContactId) {
     EXPECT_EQ("Contact ID was rejected.", error->message.getValue(""));
 }
 
+TEST_F(ContactControllerTest, ReturnsCreatedContactAndLocation) {
+    const auto response = controller_.createContact(
+        R"({"name":"Alex Quinn","phone":"00123","address":"103 Example Avenue"})");
+    ASSERT_NE(response, nullptr);
+    EXPECT_EQ(201, response->getStatus().code);
+    EXPECT_EQ("/contacts/70", response->getHeader("Location").getValue(""));
+    const auto json = responseJson(response);
+    ASSERT_NE(json, nullptr);
+    const auto contact = mapper_->readFromString<oatpp::Object<JsonContact>>(json);
+    ASSERT_NE(contact.get(), nullptr);
+    EXPECT_EQ(70, contact->id.getValue(0));
+    EXPECT_EQ("Alex Quinn", contact->name.getValue(""));
+    EXPECT_EQ("00123", contact->phone.getValue(""));
+    EXPECT_EQ("103 Example Avenue", contact->address.getValue(""));
+}
+
+TEST_F(ContactControllerTest, RejectsInvalidJsonBeforeCallingService) {
+    for (const char* body : {
+             "", "{", "null", "[]", R"({"name":12})", R"({"name":null})",
+             R"({"name":"Alex","phone":"123","address":"Park",})",
+             R"({"name":"Alex" "phone":"123","address":"Park"})",
+             R"({"name":"Alex","phone":"123","address":"Park"}{"name":"Maya"})"
+         }) {
+        SCOPED_TRACE(body);
+        const auto response = controller_.createContact(body);
+        ASSERT_NE(response, nullptr);
+        EXPECT_EQ(400, response->getStatus().code);
+        const auto json = responseJson(response);
+        ASSERT_NE(json, nullptr);
+        const auto error = mapper_->readFromString<oatpp::Object<ErrorDto>>(json);
+        ASSERT_NE(error.get(), nullptr);
+        EXPECT_EQ("invalid_json", error->code.getValue(""));
+        EXPECT_FALSE(service_.create_input.has_value());
+    }
+}
+
+TEST_F(ContactControllerTest, ReturnsBadRequestWhenServiceRejectsContactData) {
+    service_.reject_creation = true;
+
+    const auto response = controller_.createContact(
+        R"({"name":"   ","phone":"00123","address":"103 Example Avenue"})");
+    ASSERT_NE(response, nullptr);
+    EXPECT_EQ(400, response->getStatus().code);
+    const auto json = responseJson(response);
+    ASSERT_NE(json, nullptr);
+    const auto error = mapper_->readFromString<oatpp::Object<ErrorDto>>(json);
+    ASSERT_NE(error.get(), nullptr);
+    EXPECT_EQ("invalid_contact_data", error->code.getValue(""));
+    EXPECT_EQ("The name field must not be empty.", error->message.getValue(""));
+}
+
+TEST_F(ContactControllerTest, ReturnsGenericErrorWhenCreationFails) {
+    service_.fail_creation = true;
+
+    const auto response = controller_.createContact(
+        R"({"name":"Alex Quinn","phone":"00123","address":"103 Example Avenue"})");
+    ASSERT_NE(response, nullptr);
+    EXPECT_EQ(500, response->getStatus().code);
+    const auto json = responseJson(response);
+    ASSERT_NE(json, nullptr);
+    const auto error = mapper_->readFromString<oatpp::Object<ErrorDto>>(json);
+    ASSERT_NE(error.get(), nullptr);
+    EXPECT_EQ("contact_create_failed", error->code.getValue(""));
+    EXPECT_EQ("Could not create contact.", error->message.getValue(""));
+}
+
 }  // namespace

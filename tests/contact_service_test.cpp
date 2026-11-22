@@ -8,6 +8,7 @@ namespace {
 class ContactRepositoryStub : public IContactRepository {
 public:
     mutable std::optional<ContactFields> inserted;
+    mutable std::optional<Contact> updated;
 
     std::vector<Contact> listContacts() const override { return {}; }
 
@@ -21,6 +22,10 @@ public:
         return {70, fields.name, fields.phone, fields.address};
     }
 
+    std::optional<Contact> updateContact(std::int64_t id, const ContactFields& fields) const override {
+        updated = Contact{id, fields.name, fields.phone, fields.address};
+        return updated;
+    }
 };
 
 TEST(ContactServiceTest, RejectsNonPositiveIdsBeforeCallingRepository) {

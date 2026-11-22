@@ -4,10 +4,22 @@
 
 namespace {
 
+void requirePositiveId(std::int64_t id) {
+    if (id <= 0) {
+        throw InvalidContactId("Contact ID must be a positive integer.");
+    }
+}
+
 void requireNonBlank(const std::string& value, const char* field) {
     if (value.find_first_not_of(" \t\n\r\f\v") == std::string::npos) {
         throw InvalidContactData(std::string("The ") + field + " field must not be empty.");
     }
+}
+
+void validateContactFields(const ContactFields& fields) {
+    requireNonBlank(fields.name, "name");
+    requireNonBlank(fields.phone, "phone");
+    requireNonBlank(fields.address, "address");
 }
 
 }  // namespace
@@ -20,15 +32,17 @@ std::vector<Contact> ContactService::listContacts() const {
 }
 
 std::optional<Contact> ContactService::findContactById(std::int64_t id) const {
-    if (id <= 0) {
-        throw InvalidContactId("Contact ID must be a positive integer.");
-    }
+    requirePositiveId(id);
     return repository_.findContactById(id);
 }
 
-Contact ContactService::createContact(const ContactFields& contact) const {
-    requireNonBlank(contact.name, "name");
-    requireNonBlank(contact.phone, "phone");
-    requireNonBlank(contact.address, "address");
-    return repository_.createContact(contact);
+Contact ContactService::createContact(const ContactFields& fields) const {
+    validateContactFields(fields);
+    return repository_.createContact(fields);
+}
+
+std::optional<Contact> ContactService::updateContact(std::int64_t id, const ContactFields& fields) const {
+    requirePositiveId(id);
+    validateContactFields(fields);
+    return repository_.updateContact(id, fields);
 }

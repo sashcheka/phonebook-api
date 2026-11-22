@@ -42,6 +42,11 @@ public:
           "INSERT INTO contacts (name, phone, address) VALUES (:name, :phone, :address) "
           "RETURNING id, name, phone, address;",
           PARAM(oatpp::String, name), PARAM(oatpp::String, phone), PARAM(oatpp::String, address))
+    QUERY(updateContactById,
+          "UPDATE contacts SET name = :name, phone = :phone, address = :address WHERE id = :id "
+          "RETURNING id, name, phone, address;",
+          PARAM(oatpp::Int64, id), PARAM(oatpp::String, name),
+          PARAM(oatpp::String, phone), PARAM(oatpp::String, address))
 };
 
 #include OATPP_CODEGEN_END(DbClient)
@@ -80,8 +85,8 @@ std::optional<Contact> SqliteContactRepository::findContactById(std::int64_t id)
     return toContact(rows[0]);
 }
 
-Contact SqliteContactRepository::createContact(const ContactFields& contact) const {
-    auto result = client_->insertContact(contact.name, contact.phone, contact.address);
+Contact SqliteContactRepository::createContact(const ContactFields& fields) const {
+    auto result = client_->insertContact(fields.name, fields.phone, fields.address);
     if (!result->isSuccess()) {
         throw std::runtime_error("Could not create contact: " + *result->getErrorMessage());
     }
@@ -89,6 +94,22 @@ Contact SqliteContactRepository::createContact(const ContactFields& contact) con
     const auto rows = result->fetch<oatpp::Vector<oatpp::Object<ContactRow>>>();
     if (!result->isSuccess() || rows->empty()) {
         throw std::runtime_error("Could not complete contact creation.");
+    }
+    return toContact(rows[0]);
+}
+
+std::optional<Contact> SqliteContactRepository::updateContact(std::int64_t id, const ContactFields& fields) const {
+    auto result = client_->updateContactById(id, fields.name, fields.phone, fields.address);
+    if (!result->isSuccess()) {
+        throw std::runtime_error("Could not update contact: " + *result->getErrorMessage());
+    }
+
+    const auto rows = result->fetch<oatpp::Vector<oatpp::Object<ContactRow>>>();
+    if (!result->isSuccess()) {
+        throw std::runtime_error("Could not complete contact update.");
+    }
+    if (rows->empty()) {
+        return std::nullopt;
     }
     return toContact(rows[0]);
 }

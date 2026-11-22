@@ -14,7 +14,8 @@ public:
 
     std::vector<Contact> listContacts() const override;
     std::optional<Contact> findContactById(std::int64_t id) const override;
-    Contact createContact(const ContactFields& contact) const override;
+    Contact createContact(const ContactFields& fields) const override;
+    std::optional<Contact> updateContact(std::int64_t id, const ContactFields& fields) const override;
 
 private:
     const IContactRepository& repository_;

@@ -51,6 +51,7 @@ curl -i -X PUT http://127.0.0.1:8000/contacts/17 \
 curl -i -X PATCH http://127.0.0.1:8000/contacts/17 \
   -H 'Content-Type: application/merge-patch+json' \
   -d '{"phone":"00789"}'
+curl -i -X DELETE http://127.0.0.1:8000/contacts/17
 ```
 
 `/health` returns `200 OK` with the body `OK`. `/contacts` returns a JSON array sorted by `id`.
@@ -61,6 +62,8 @@ curl -i -X PATCH http://127.0.0.1:8000/contacts/17 \
 `PUT /contacts/{id}` replaces the name, phone, and address of an existing contact. Send all three non-blank strings. The response contains the updated contact with the same ID and status `200 OK`. Invalid input returns `400`, a missing contact returns `404`, and a storage failure returns `500`.
 
 `PATCH /contacts/{id}` updates only the supplied fields and returns the resulting contact with `200 OK`. An empty object returns the current contact. Nulls, blank strings, unknown fields, and attempts to change `id` return `400`. Missing contacts return `404`, and storage failures return `500`.
+
+`DELETE /contacts/{id}` removes a contact and returns `204 No Content` with an empty body. An invalid ID returns `400`, a missing contact returns `404`, and a storage failure returns `500`.
 
 Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore the routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) includes the creation, replacement, and partial update schemas.
 
@@ -74,7 +77,7 @@ Install GoogleTest for your platform.
 - On Ubuntu, run `../vcpkg/vcpkg install gtest` using the vcpkg setup above.
 
 Reconfigure the `build` directory from the platform instructions and run CTest.
-The unit tests call the health and contacts controllers directly. The contact controller tests use a stub service. The contact service tests verify validation, creation, and updates through a stub repository.
+The unit tests call the health and contacts controllers directly. The contact controller tests use a stub service. The contact service tests verify validation and contact operations through a stub repository.
 
 ```sh
 cmake -S . -B build -DBUILD_TESTING=ON

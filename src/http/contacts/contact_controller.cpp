@@ -146,6 +146,15 @@ void ContactController::describePatchContact(oatpp::web::server::api::Endpoint::
     info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_500, "application/json", "Could not update contact");
 }
 
+void ContactController::describeDeleteContact(oatpp::web::server::api::Endpoint::Info& info) {
+    info.summary = "Delete a contact";
+    info.pathParams["id"].description = "Positive 64-bit integer";
+    info.addResponse(Status::CODE_204, "Contact deleted");
+    info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_400, "application/json", "Invalid contact ID");
+    info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_404, "application/json", "Contact not found");
+    info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_500, "application/json", "Could not delete contact");
+}
+
 std::shared_ptr<ContactController::OutgoingResponse> ContactController::listContacts() {
     auto response = ContactListDto::createShared();
     for (const auto& contact : service_.listContacts()) {
@@ -254,5 +263,27 @@ std::shared_ptr<ContactController::OutgoingResponse> ContactController::patchCon
         OATPP_LOGE("ContactController", "PATCH /contacts/{id}: %s", exception.what());
         return createDtoResponse(
             Status::CODE_500, makeError("contact_update_failed", "Could not update contact."));
+    }
+}
+
+std::shared_ptr<ContactController::OutgoingResponse> ContactController::deleteContact(
+    const oatpp::String& id) {
+    const auto contact_id = parseContactId(id);
+    if (!contact_id) {
+        return createDtoResponse(Status::CODE_400,
+                                 makeError("invalid_contact_id", "Contact ID must be a positive integer."));
+    }
+
+    try {
+        if (!service_.deleteContact(*contact_id)) {
+            return createDtoResponse(Status::CODE_404, makeError("contact_not_found", "Contact not found."));
+        }
+        return createResponse(Status::CODE_204);
+    } catch (const InvalidContactId& exception) {
+        return createDtoResponse(Status::CODE_400, makeError("invalid_contact_id", exception.what()));
+    } catch (const std::exception& exception) {
+        OATPP_LOGE("ContactController", "DELETE /contacts/{id}: %s", exception.what());
+        return createDtoResponse(
+            Status::CODE_500, makeError("contact_delete_failed", "Could not delete contact."));
     }
 }

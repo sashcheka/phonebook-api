@@ -37,12 +37,18 @@ public:
     }
     ENDPOINT("PATCH", "/contacts/{id}", patchContact, PATH(String, id), BODY_STRING(String, body));
 
+    ENDPOINT_INFO(deleteContact) {
+        describeDeleteContact(*info);
+    }
+    ENDPOINT("DELETE", "/contacts/{id}", deleteContact, PATH(String, id));
+
 private:
     static void describeListContacts(oatpp::web::server::api::Endpoint::Info& info);
     static void describeGetContactById(oatpp::web::server::api::Endpoint::Info& info);
     static void describeCreateContact(oatpp::web::server::api::Endpoint::Info& info);
     static void describeUpdateContact(oatpp::web::server::api::Endpoint::Info& info);
     static void describePatchContact(oatpp::web::server::api::Endpoint::Info& info);
+    static void describeDeleteContact(oatpp::web::server::api::Endpoint::Info& info);
 
     const IContactService& service_;
 };

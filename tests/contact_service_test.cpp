@@ -11,6 +11,7 @@ public:
     mutable std::optional<Contact> updated;
     mutable std::optional<ContactPatch> patched;
     mutable std::optional<std::int64_t> looked_up_id;
+    mutable std::optional<std::int64_t> deleted_id;
     std::optional<Contact> existing;
 
     std::vector<Contact> listContacts() const override { return {}; }
@@ -34,6 +35,11 @@ public:
     std::optional<Contact> updateContactFields(std::int64_t, const ContactPatch& patch) const override {
         patched = patch;
         return existing;
+    }
+
+    bool deleteContact(std::int64_t id) const override {
+        deleted_id = id;
+        return existing && existing->id == id;
     }
 };
 

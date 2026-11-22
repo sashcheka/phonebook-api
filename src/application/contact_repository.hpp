@@ -14,4 +14,5 @@ public:
     virtual Contact createContact(const ContactFields& fields) const = 0;
     virtual std::optional<Contact> replaceContact(std::int64_t id, const ContactFields& fields) const = 0;
     virtual std::optional<Contact> updateContactFields(std::int64_t id, const ContactPatch& patch) const = 0;
+    virtual bool deleteContact(std::int64_t id) const = 0;
 };

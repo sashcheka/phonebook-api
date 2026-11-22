@@ -63,3 +63,8 @@ std::optional<Contact> ContactService::updateContactFields(std::int64_t id, cons
     }
     return repository_.updateContactFields(id, patch);
 }
+
+bool ContactService::deleteContact(std::int64_t id) const {
+    requirePositiveId(id);
+    return repository_.deleteContact(id);
+}

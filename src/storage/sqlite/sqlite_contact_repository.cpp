@@ -52,6 +52,8 @@ public:
           "RETURNING id, name, phone, address;",
           PARAM(oatpp::Int64, id), PARAM(oatpp::String, name),
           PARAM(oatpp::String, phone), PARAM(oatpp::String, address))
+    QUERY(deleteContactById, "DELETE FROM contacts WHERE id = :id RETURNING id;",
+          PARAM(oatpp::Int64, id))
 };
 
 #include OATPP_CODEGEN_END(DbClient)
@@ -122,4 +124,17 @@ std::optional<Contact> SqliteContactRepository::updateContactFields(std::int64_t
         return std::nullopt;
     }
     return toContact(rows[0]);
+}
+
+bool SqliteContactRepository::deleteContact(std::int64_t id) const {
+    auto result = client_->deleteContactById(id);
+    if (!result->isSuccess()) {
+        throw std::runtime_error("Could not delete contact: " + *result->getErrorMessage());
+    }
+
+    const auto deleted = result->fetch<oatpp::Vector<oatpp::Vector<oatpp::Int64>>>();
+    if (!result->isSuccess()) {
+        throw std::runtime_error("Could not complete contact deletion.");
+    }
+    return !deleted->empty();
 }

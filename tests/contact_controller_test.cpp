@@ -71,6 +71,11 @@ public:
         return contact;
     }
 
+    bool deleteContact(std::int64_t id) const override {
+        checkWrite();
+        return findContactById(id).has_value();
+    }
+
 private:
     void checkWrite() const {
         if (reject_contact_data) {

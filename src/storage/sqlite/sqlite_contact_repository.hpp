@@ -15,6 +15,7 @@ public:
     Contact createContact(const ContactFields& fields) const override;
     std::optional<Contact> replaceContact(std::int64_t id, const ContactFields& fields) const override;
     std::optional<Contact> updateContactFields(std::int64_t id, const ContactPatch& patch) const override;
+    bool deleteContact(std::int64_t id) const override;
 
 private:
     class Client;

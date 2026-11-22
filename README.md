@@ -4,8 +4,8 @@ A lightweight C++ REST API for managing phone contacts, built with Oat++ and bac
 
 ## Install and run
 
-Run the commands from the repository root. The server build uses a C++17 compiler, CMake 3.24 or newer, and Oat++ 1.3.x.
-CMake downloads `oatpp-swagger` on the first configure.
+Run the commands from the repository root. The server build uses a C++17 compiler, CMake 3.24 or newer, Oat++ 1.3.x, and SQLite 3.35 or newer.
+CMake downloads `oatpp-swagger` and `nlohmann/json` on the first configure.
 
 ### macOS
 
@@ -42,12 +42,17 @@ With the server running, check it from a second terminal.
 curl -i http://127.0.0.1:8000/health
 curl -i http://127.0.0.1:8000/contacts
 curl -i http://127.0.0.1:8000/contacts/1
+curl -i -X POST http://127.0.0.1:8000/contacts \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Alex Quinn","phone":"+1-202-555-0180","address":"103 Example Avenue"}'
 ```
 
 `/health` returns `200 OK` with the body `OK`. `/contacts` returns a JSON array sorted by `id`.
 `/contacts/{id}` returns one contact with `200 OK`. The ID must be a positive 64-bit integer. Invalid IDs receive `400 Bad Request` (`invalid_contact_id`), and missing contacts receive `404 Not Found` (`contact_not_found`). These errors include a JSON `code` and `message`.
 
-Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore the routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) describes `ContactDto` and the lookup errors.
+`POST /contacts` requires non-blank strings for `name`, `phone`, and `address`. SQLite assigns the ID. A successful request returns `201 Created`, the new contact, and a `Location` header pointing to it. Invalid JSON or contact data returns `400`, and a storage failure returns `500` with a generic JSON message.
+
+Open [Swagger UI](http://127.0.0.1:8000/swagger/ui) to explore the routes and send requests with **Try it out**. The [OpenAPI document](http://127.0.0.1:8000/api-docs/oas-3.0.0.json) includes the creation request and response schemas.
 
 On first start, `init_db.sql` initializes `phonebook.db` in the working directory with 69 fictional contacts. Restarts reuse that database. Press `Ctrl+C` in the server terminal to stop it.
 
@@ -59,7 +64,7 @@ Install GoogleTest for your platform.
 - On Ubuntu, run `../vcpkg/vcpkg install gtest` using the vcpkg setup above.
 
 Reconfigure the `build` directory from the platform instructions and run CTest.
-The unit tests call the health and contacts controllers directly. The contact controller tests use a stub service, and the contact service test checks ID validation before the repository is called.
+The unit tests call the health and contacts controllers directly. The contact controller tests use a stub service. The contact service tests verify validation and creation through a stub repository.
 
 ```sh
 cmake -S . -B build -DBUILD_TESTING=ON

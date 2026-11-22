@@ -56,6 +56,7 @@ curl -i -X DELETE http://127.0.0.1:8000/contacts/17
 
 `/health` returns `200 OK` with the body `OK`. `/contacts` returns a JSON array sorted by `id`.
 `/contacts/{id}` returns one contact with `200 OK`. The ID must be a positive 64-bit integer. Invalid IDs receive `400 Bad Request` (`invalid_contact_id`), and missing contacts receive `404 Not Found` (`contact_not_found`). These errors include a JSON `code` and `message`.
+If SQLite cannot read contacts, both GET endpoints return `500 Internal Server Error` with a JSON `code` and `message`.
 
 `POST /contacts` requires non-blank strings for `name`, `phone`, and `address`. SQLite assigns the ID. A successful request returns `201 Created`, the new contact, and a `Location` header pointing to it. Invalid JSON or contact data returns `400`, and a storage failure returns `500` with a generic JSON message.
 

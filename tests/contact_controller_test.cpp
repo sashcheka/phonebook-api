@@ -28,15 +28,20 @@ public:
     std::vector<Contact> contacts;
     bool reject_id = false;
     bool reject_contact_data = false;
+    bool fail_read = false;
     bool fail_write = false;
     mutable std::optional<ContactFields> create_input;
 
-    std::vector<Contact> listContacts() const override { return contacts; }
+    std::vector<Contact> listContacts() const override {
+        checkRead();
+        return contacts;
+    }
 
     std::optional<Contact> findContactById(std::int64_t id) const override {
         if (reject_id) {
             throw InvalidContactId("Contact ID was rejected.");
         }
+        checkRead();
         for (const auto& contact : contacts) {
             if (contact.id == id) {
                 return contact;
@@ -77,6 +82,12 @@ public:
     }
 
 private:
+    void checkRead() const {
+        if (fail_read) {
+            throw std::runtime_error("Internal SQLite error");
+        }
+    }
+
     void checkWrite() const {
         if (reject_contact_data) {
             throw InvalidContactData("The name field must not be empty.");
@@ -150,6 +161,11 @@ TEST_F(ContactControllerTest, ReturnsEmptyJsonArrayWhenServiceReturnsNoContacts)
     expectContactsResponse();
 }
 
+TEST_F(ContactControllerTest, ReturnsGenericErrorWhenListFails) {
+    service_.fail_read = true;
+    expectErrorResponse(controller_.listContacts(), 500, "contact_list_failed", "Could not list contacts.");
+}
+
 TEST_F(ContactControllerTest, ReturnsRequestedContactAsJson) {
     service_.contacts = {
         {3, "Alex Quinn", "+1-202-555-0102", "103 Example Avenue"},
@@ -179,6 +195,12 @@ TEST_F(ContactControllerTest, ReturnsNotFoundForMissingContact) {
     ASSERT_NE(error.get(), nullptr);
     EXPECT_EQ("contact_not_found", error->code.getValue(""));
     EXPECT_EQ("Contact not found.", error->message.getValue(""));
+}
+
+TEST_F(ContactControllerTest, ReturnsGenericErrorWhenLookupFails) {
+    service_.fail_read = true;
+    expectErrorResponse(controller_.getContactById("17"), 500, "contact_lookup_failed",
+                        "Could not find contact.");
 }
 
 TEST_F(ContactControllerTest, ReturnsBadRequestForUnparseableContactIds) {

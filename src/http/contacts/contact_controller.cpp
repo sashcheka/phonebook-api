@@ -105,6 +105,7 @@ ContactController::ContactController(
 void ContactController::describeListContacts(oatpp::web::server::api::Endpoint::Info& info) {
     info.summary = "List contacts";
     info.addResponse<ContactListDto>(Status::CODE_200, "application/json");
+    info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_500, "application/json", "Could not list contacts");
 }
 
 void ContactController::describeGetContactById(oatpp::web::server::api::Endpoint::Info& info) {
@@ -113,6 +114,7 @@ void ContactController::describeGetContactById(oatpp::web::server::api::Endpoint
     info.addResponse<oatpp::Object<ContactDto>>(Status::CODE_200, "application/json");
     info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_400, "application/json", "Invalid contact ID");
     info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_404, "application/json", "Contact not found");
+    info.addResponse<oatpp::Object<ErrorDto>>(Status::CODE_500, "application/json", "Could not find contact");
 }
 
 void ContactController::describeCreateContact(oatpp::web::server::api::Endpoint::Info& info) {
@@ -156,11 +158,17 @@ void ContactController::describeDeleteContact(oatpp::web::server::api::Endpoint:
 }
 
 std::shared_ptr<ContactController::OutgoingResponse> ContactController::listContacts() {
-    auto response = ContactListDto::createShared();
-    for (const auto& contact : service_.listContacts()) {
-        response->push_back(toContactDto(contact));
+    try {
+        auto response = ContactListDto::createShared();
+        for (const auto& contact : service_.listContacts()) {
+            response->push_back(toContactDto(contact));
+        }
+        return createDtoResponse(Status::CODE_200, response);
+    } catch (const std::exception& exception) {
+        OATPP_LOGE("ContactController", "GET /contacts: %s", exception.what());
+        return createDtoResponse(
+            Status::CODE_500, makeError("contact_list_failed", "Could not list contacts."));
     }
-    return createDtoResponse(Status::CODE_200, response);
 }
 
 std::shared_ptr<ContactController::OutgoingResponse> ContactController::getContactById(
@@ -179,6 +187,10 @@ std::shared_ptr<ContactController::OutgoingResponse> ContactController::getConta
         return createDtoResponse(Status::CODE_200, toContactDto(*contact));
     } catch (const InvalidContactId& exception) {
         return createDtoResponse(Status::CODE_400, makeError("invalid_contact_id", exception.what()));
+    } catch (const std::exception& exception) {
+        OATPP_LOGE("ContactController", "GET /contacts/{id}: %s", exception.what());
+        return createDtoResponse(
+            Status::CODE_500, makeError("contact_lookup_failed", "Could not find contact."));
     }
 }
 

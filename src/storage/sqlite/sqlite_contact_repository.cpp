@@ -71,6 +71,9 @@ std::vector<Contact> SqliteContactRepository::listContacts() const {
     }
 
     const auto rows = result->fetch<oatpp::Vector<oatpp::Object<ContactRow>>>();
+    if (!result->isSuccess()) {
+        throw std::runtime_error("Could not finish reading contacts.");
+    }
     std::vector<Contact> contacts;
     contacts.reserve(rows->size());
     for (const auto& row : *rows) {
@@ -86,6 +89,9 @@ std::optional<Contact> SqliteContactRepository::findContactById(std::int64_t id)
     }
 
     const auto rows = result->fetch<oatpp::Vector<oatpp::Object<ContactRow>>>();
+    if (!result->isSuccess()) {
+        throw std::runtime_error("Could not finish reading the contact.");
+    }
     if (rows->empty()) {
         return std::nullopt;
     }

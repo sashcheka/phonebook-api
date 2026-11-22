@@ -93,4 +93,42 @@ TEST(ContactServiceTest, UpdatesContactThroughRepository) {
     EXPECT_EQ(17, updated->id);
 }
 
+TEST(ContactServiceTest, PassesOnlyProvidedPatchFieldsToRepository) {
+    const ContactRepositoryStub repository;
+    const ContactService service{repository};
+    ContactPatch patch;
+    patch.phone = "00456";
+
+    EXPECT_FALSE(service.updateContactFields(17, patch).has_value());
+    ASSERT_TRUE(repository.patched.has_value());
+    EXPECT_EQ(patch.phone, repository.patched->phone);
+    EXPECT_FALSE(repository.patched->name.has_value());
+    EXPECT_FALSE(repository.patched->address.has_value());
+    EXPECT_FALSE(repository.looked_up_id.has_value());
+}
+
+TEST(ContactServiceTest, RejectsInvalidPatchBeforeCallingRepository) {
+    const ContactRepositoryStub repository;
+    const ContactService service{repository};
+    ContactPatch patch;
+    patch.phone = " ";
+
+    EXPECT_THROW(service.updateContactFields(0, {}), InvalidContactId);
+    EXPECT_THROW(service.updateContactFields(17, patch), InvalidContactData);
+    EXPECT_FALSE(repository.patched.has_value());
+    EXPECT_FALSE(repository.looked_up_id.has_value());
+}
+
+TEST(ContactServiceTest, EmptyPatchReadsContactWithoutUpdatingIt) {
+    ContactRepositoryStub repository;
+    repository.existing = Contact{17, "Alex Quinn", "00123", "103 Example Avenue"};
+    const ContactService service{repository};
+
+    const auto result = service.updateContactFields(17, {});
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(17, result->id);
+    EXPECT_EQ(17, repository.looked_up_id);
+    EXPECT_FALSE(repository.patched.has_value());
+}
+
 }  // namespace

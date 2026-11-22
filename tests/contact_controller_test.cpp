@@ -316,4 +316,41 @@ TEST_F(ContactControllerTest, ReturnsGenericErrorWhenUpdateFails) {
     expectErrorResponse(response, 500, "contact_update_failed", "Could not update contact.");
 }
 
+TEST_F(ContactControllerTest, PatchesOnlySuppliedFields) {
+    service_.contacts = {{17, "Alex Quinn", "00123", "103 Example Avenue"}};
+
+    const auto response = controller_.patchContact("17", R"({"phone":"00456"})");
+    ASSERT_NE(response, nullptr);
+    EXPECT_EQ(200, response->getStatus().code);
+    const auto json = responseJson(response);
+    ASSERT_NE(json, nullptr);
+    const auto contact = mapper_->readFromString<oatpp::Object<JsonContact>>(json);
+    ASSERT_NE(contact.get(), nullptr);
+    EXPECT_EQ(17, contact->id.getValue(0));
+    EXPECT_EQ("Alex Quinn", contact->name.getValue(""));
+    EXPECT_EQ("00456", contact->phone.getValue(""));
+    EXPECT_EQ("103 Example Avenue", contact->address.getValue(""));
+}
+
+TEST_F(ContactControllerTest, RejectsInvalidPatchRequests) {
+    for (const auto* body : {"[]", "{", R"({"phone":null})", R"({"phone":123})", R"({"id":18})"}) {
+        SCOPED_TRACE(body);
+        expectErrorResponse(controller_.patchContact("17", body), 400, "invalid_json",
+                            "Expected a JSON object with optional string fields: name, phone, address.");
+    }
+    expectErrorResponse(controller_.patchContact("17x", "{}"), 400, "invalid_contact_id",
+                        "Contact ID must be a positive integer.");
+}
+
+TEST_F(ContactControllerTest, ReturnsNotFoundWhenPatchingMissingContact) {
+    expectErrorResponse(controller_.patchContact("999", R"({"phone":"00456"})"),
+                        404, "contact_not_found", "Contact not found.");
+}
+
+TEST_F(ContactControllerTest, ReturnsGenericErrorWhenPatchFails) {
+    service_.fail_write = true;
+    expectErrorResponse(controller_.patchContact("17", R"({"phone":"00456"})"),
+                        500, "contact_update_failed", "Could not update contact.");
+}
+
 }  // namespace

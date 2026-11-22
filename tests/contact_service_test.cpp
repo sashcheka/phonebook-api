@@ -137,4 +137,24 @@ TEST(ContactServiceTest, EmptyPatchReadsContactWithoutUpdatingIt) {
     EXPECT_FALSE(repository.patched.has_value());
 }
 
+TEST(ContactServiceTest, RejectsInvalidDeleteIdBeforeCallingRepository) {
+    const ContactRepositoryStub repository;
+    const ContactService service{repository};
+
+    EXPECT_THROW(service.deleteContact(0), InvalidContactId);
+    EXPECT_THROW(service.deleteContact(-1), InvalidContactId);
+    EXPECT_FALSE(repository.deleted_id.has_value());
+}
+
+TEST(ContactServiceTest, ReturnsDeletionResultFromRepository) {
+    ContactRepositoryStub repository;
+    repository.existing = Contact{17, "Alex Quinn", "00123", "103 Example Avenue"};
+    const ContactService service{repository};
+
+    EXPECT_TRUE(service.deleteContact(17));
+    EXPECT_EQ(17, repository.deleted_id);
+    EXPECT_FALSE(service.deleteContact(999));
+    EXPECT_EQ(999, repository.deleted_id);
+}
+
 }  // namespace

@@ -358,4 +358,32 @@ TEST_F(ContactControllerTest, ReturnsGenericErrorWhenPatchFails) {
                         500, "contact_update_failed", "Could not update contact.");
 }
 
+TEST_F(ContactControllerTest, ReturnsNoContentWhenContactIsDeleted) {
+    service_.contacts = {{17, "Alex Quinn", "00123", "103 Example Avenue"}};
+
+    const auto response = controller_.deleteContact("17");
+    ASSERT_NE(response, nullptr);
+    EXPECT_EQ(204, response->getStatus().code);
+    EXPECT_EQ(nullptr, response->getBody());
+}
+
+TEST_F(ContactControllerTest, ReturnsNotFoundWhenDeletingMissingContact) {
+    expectErrorResponse(controller_.deleteContact("999"), 404, "contact_not_found", "Contact not found.");
+}
+
+TEST_F(ContactControllerTest, RejectsInvalidDeleteIds) {
+    expectErrorResponse(controller_.deleteContact("17x"), 400, "invalid_contact_id",
+                        "Contact ID must be a positive integer.");
+
+    service_.reject_id = true;
+    expectErrorResponse(controller_.deleteContact("-1"), 400, "invalid_contact_id",
+                        "Contact ID was rejected.");
+}
+
+TEST_F(ContactControllerTest, ReturnsGenericErrorWhenDeleteFails) {
+    service_.fail_write = true;
+    expectErrorResponse(controller_.deleteContact("17"), 500, "contact_delete_failed",
+                        "Could not delete contact.");
+}
+
 }  // namespace
